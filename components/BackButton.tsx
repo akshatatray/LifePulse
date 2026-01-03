@@ -1,23 +1,32 @@
 import { Feather } from '@expo/vector-icons';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { colors, fontFamily, fontSize, spacing, touchTarget } from '../src/theme';
 
 export const BackButton = ({ onPress }: { onPress: () => void }) => {
   return (
-    <View style={styles.backButton}>
-      <Feather name="chevron-left" size={16} color="#007AFF" />
-      <Text style={styles.backButtonText} onPress={onPress}>
-        Back
-      </Text>
-    </View>
+    <TouchableOpacity onPress={onPress} style={styles.touchArea} activeOpacity={0.7}>
+      <View style={styles.backButton}>
+        <Feather name="chevron-left" size={20} color={colors.accent.success} />
+        <Text style={styles.backButtonText}>Back</Text>
+      </View>
+    </TouchableOpacity>
   );
 };
+
 const styles = StyleSheet.create({
+  touchArea: {
+    minHeight: touchTarget.md,
+    justifyContent: 'center',
+  },
   backButton: {
     flexDirection: 'row',
-    paddingLeft: 20,
+    alignItems: 'center',
+    paddingLeft: spacing.lg,
   },
   backButtonText: {
-    color: '#007AFF',
-    marginLeft: 4,
+    color: colors.accent.success,
+    fontFamily: fontFamily.semiBold,
+    fontSize: fontSize.base,
+    marginLeft: spacing.xs,
   },
 });

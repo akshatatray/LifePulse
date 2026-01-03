@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "186229900740",
+    "project_id": "lifepulse-2",
+    "storage_bucket": "lifepulse-2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186229900740:android:bf9fca2917c2bdde991091",
+        "android_client_info": {
+          "package_name": "com.lifepulse.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "186229900740-gqabtgfdes3u31kovqjhe8qu8qfkfu2j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAe-RxEfzW5N2ZmQDfOGSrCJ-k0Jcs1s2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "186229900740-gqabtgfdes3u31kovqjhe8qu8qfkfu2j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

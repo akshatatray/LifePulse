@@ -14,9 +14,6 @@ web-build/
 # firebase/supabase/vexo
 .env
 
-ios
-android
-
 # macOS
 .DS_Store
 

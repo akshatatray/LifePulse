@@ -1,26 +1,43 @@
-import type { StaticScreenProps } from '@react-navigation/native';
-import { ScreenContent } from 'components/ScreenContent';
+import { StyleSheet, View, Text } from 'react-native';
+import { Container } from '../components/Container';
+import { colors, spacing, textStyles } from '../src/theme';
+import type { DetailsScreenProps } from '../navigation';
 
-import { StyleSheet, View } from 'react-native';
-
-type Props = StaticScreenProps<{
-  name: string;
-}>;
-
-export default function Details({ route }: Props) {
+export default function Details({ route }: DetailsScreenProps) {
   return (
-    <View style={styles.container}>
-      <ScreenContent
-        path="screens/details.tsx"
-        title={`Showing details for user ${route.params?.name}`}
-      />
-    </View>
+    <Container edges={['bottom']}>
+      <View style={styles.content}>
+        <Text style={styles.label}>User Details</Text>
+        <Text style={styles.title}>{route.params?.name}</Text>
+        <Text style={styles.description}>
+          This is a placeholder detail screen. It will be replaced with actual content in Phase 1.
+        </Text>
+      </View>
+    </Container>
   );
 }
 
-export const styles = StyleSheet.create({
-  container: {
+const styles = StyleSheet.create({
+  content: {
     flex: 1,
-    padding: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  label: {
+    ...textStyles.labelMedium,
+    color: colors.text.muted,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+  },
+  title: {
+    ...textStyles.displaySmall,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
+  },
+  description: {
+    ...textStyles.bodyMedium,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
 });
