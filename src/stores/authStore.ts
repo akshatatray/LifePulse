@@ -10,6 +10,7 @@ export interface User {
   email: string;
   displayName: string;
   photoURL?: string;
+  emailVerified: boolean;
   createdAt: Date;
 }
 
@@ -20,6 +21,7 @@ interface AuthState {
   isAuthenticated: boolean;
   hasSeenOnboarding: boolean;
   isInitialized: boolean;
+  isCheckingVerification: boolean;
 
   // Actions
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -27,6 +29,8 @@ interface AuthState {
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   loginWithApple: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  sendVerificationEmail: () => Promise<{ success: boolean; error?: string }>;
+  checkEmailVerification: () => Promise<boolean>;
   setHasSeenOnboarding: (value: boolean) => void;
   setLoading: (value: boolean) => void;
   initializeAuth: () => () => void;
@@ -38,6 +42,7 @@ const mapFirebaseUser = (firebaseUser: FirebaseAuthTypes.User): User => ({
   email: firebaseUser.email || '',
   displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
   photoURL: firebaseUser.photoURL || undefined,
+  emailVerified: firebaseUser.emailVerified,
   createdAt: new Date(firebaseUser.metadata.creationTime || Date.now()),
 });
 
@@ -93,6 +98,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       hasSeenOnboarding: false,
       isInitialized: false,
+      isCheckingVerification: false,
 
       initializeAuth: () => {
         // Listen to Firebase auth state changes
@@ -174,6 +180,10 @@ export const useAuthStore = create<AuthState>()(
           // Update the user's display name
           await userCredential.user.updateProfile({ displayName });
 
+          // Send email verification
+          await userCredential.user.sendEmailVerification();
+          console.log('[Auth] Verification email sent to:', email);
+
           const user = mapFirebaseUser(userCredential.user);
           user.displayName = displayName; // Use the provided displayName
 
@@ -240,6 +250,60 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout error:', error);
           set({ isLoading: false });
+        }
+      },
+
+      sendVerificationEmail: async () => {
+        const currentUser = auth().currentUser;
+        if (!currentUser) {
+          return { success: false, error: 'No user logged in' };
+        }
+
+        try {
+          await currentUser.sendEmailVerification();
+          console.log('[Auth] Verification email sent');
+          return { success: true };
+        } catch (error: any) {
+          console.error('[Auth] Error sending verification email:', error);
+          
+          let errorMessage = 'Failed to send verification email.';
+          if (error.code === 'auth/too-many-requests') {
+            errorMessage = 'Too many requests. Please wait a moment before trying again.';
+          }
+          
+          return { success: false, error: errorMessage };
+        }
+      },
+
+      checkEmailVerification: async () => {
+        const currentUser = auth().currentUser;
+        if (!currentUser) {
+          return false;
+        }
+
+        set({ isCheckingVerification: true });
+
+        try {
+          // Reload user to get latest emailVerified status
+          await currentUser.reload();
+          const refreshedUser = auth().currentUser;
+          
+          if (refreshedUser?.emailVerified) {
+            console.log('[Auth] Email verified!');
+            const user = mapFirebaseUser(refreshedUser);
+            set({
+              user,
+              isCheckingVerification: false,
+            });
+            return true;
+          }
+          
+          set({ isCheckingVerification: false });
+          return false;
+        } catch (error) {
+          console.error('[Auth] Error checking email verification:', error);
+          set({ isCheckingVerification: false });
+          return false;
         }
       },
 

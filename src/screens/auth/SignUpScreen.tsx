@@ -380,6 +380,7 @@ const styles = StyleSheet.create({
     ...textStyles.bodySmall,
     color: colors.text.secondary,
     lineHeight: 20,
+    marginTop: spacing.md,
   },
   termsLink: {
     color: colors.accent.success,

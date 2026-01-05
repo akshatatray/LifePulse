@@ -4,7 +4,9 @@
  */
 
 export { habitService, logService } from './firestore';
+export { gamificationService } from './gamificationFirestore';
 export { notificationService } from './notifications';
+export { premiumService } from './premiumFirestore';
 export {
     activityService,
     challengeService,

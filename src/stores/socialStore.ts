@@ -322,11 +322,25 @@ export const useSocialStore = create<SocialState>()(
             fetchLeaderboard: async (userId: string) => {
                 try {
                     set({ isLoading: true, error: null });
-                    const { leaderboardFilter } = get();
+                    const { leaderboardFilter, friends } = get();
+                    
+                    console.log('[SocialStore] fetchLeaderboard - friends:', friends.length, JSON.stringify(friends.map(f => ({ id: f.id, userId: f.userId, status: f.status }))));
+                    
+                    // Get friend IDs for friends-only leaderboard
+                    // Use f.userId if available, fallback to f.id (the document ID which is the friend's user ID)
+                    const friendIds = friends
+                        .filter((f) => f.status === 'accepted')
+                        .map((f) => f.userId || f.id)
+                        .filter(Boolean);
+                    
+                    console.log('[SocialStore] fetchLeaderboard - friendIds:', friendIds);
+                    
                     const [leaderboard, currentUserRank] = await Promise.all([
-                        leaderboardService.getLeaderboard(userId, leaderboardFilter),
+                        leaderboardService.getLeaderboard(userId, leaderboardFilter, friendIds),
                         leaderboardService.getUserRank(userId, leaderboardFilter),
                     ]);
+                    
+                    console.log('[SocialStore] fetchLeaderboard - result:', leaderboard.length, 'entries');
                     set({ leaderboard, currentUserRank, isLoading: false });
                 } catch (error) {
                     console.error('Error fetching leaderboard:', error);

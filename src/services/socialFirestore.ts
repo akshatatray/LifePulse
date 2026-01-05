@@ -76,12 +76,20 @@ export const friendService = {
                 .where('status', '==', 'accepted')
                 .get();
 
-            return snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                addedAt: toDate(doc.data().addedAt),
-                lastActive: doc.data().lastActive ? toDate(doc.data().lastActive) : undefined,
-            })) as Friend[];
+            const friends = snapshot.docs.map((doc) => {
+                const data = doc.data();
+                console.log('[FriendService] Friend doc:', doc.id, 'data:', JSON.stringify(data));
+                return {
+                    id: doc.id,
+                    userId: data.userId || doc.id, // Ensure userId is set
+                    ...data,
+                    addedAt: toDate(data.addedAt),
+                    lastActive: data.lastActive ? toDate(data.lastActive) : undefined,
+                };
+            }) as Friend[];
+            
+            console.log('[FriendService] Fetched friends:', friends.length);
+            return friends;
         } catch (error) {
             console.error('Error fetching friends:', error);
             return [];
@@ -682,9 +690,97 @@ export const challengeService = {
  */
 export const leaderboardService = {
     /**
-     * Get leaderboard entries
+     * Get leaderboard entries for friends + current user only
      */
     async getLeaderboard(
+        userId: string,
+        timeFrame: 'week' | 'month' | 'allTime',
+        friendIds: string[] = []
+    ): Promise<LeaderboardEntry[]> {
+        try {
+            // Include current user in the list
+            const userIds = [userId, ...friendIds.filter(id => id !== userId)];
+            
+            console.log('[Leaderboard] Fetching for userIds:', userIds, 'timeFrame:', timeFrame);
+            
+            if (userIds.length === 0) {
+                console.log('[Leaderboard] No userIds to fetch');
+                return [];
+            }
+
+            // Firestore 'in' query is limited to 30 items
+            const entries: LeaderboardEntry[] = [];
+            
+            // Process in chunks of 30
+            for (let i = 0; i < userIds.length; i += 30) {
+                const chunk = userIds.slice(i, i + 30);
+                
+                // Query leaderboard entries for this chunk of users
+                const snapshot = await getLeaderboardRef(timeFrame)
+                    .where(firestore.FieldPath.documentId(), 'in', chunk)
+                    .get();
+
+                snapshot.docs.forEach((doc) => {
+                    const data = doc.data();
+                    entries.push({
+                        userId: doc.id,
+                        displayName: data.displayName || 'User',
+                        score: data.score || 0,
+                        change: data.change || 0,
+                        photoURL: data.photoURL,
+                        rank: 0, // Will be calculated after sorting
+                        isCurrentUser: doc.id === userId,
+                    });
+                });
+            }
+
+            // Add entries for users who don't have leaderboard entries yet
+            const existingUserIds = new Set(entries.map(e => e.userId));
+            for (const id of userIds) {
+                if (!existingUserIds.has(id)) {
+                    // Fetch user profile to get display name
+                    try {
+                        const userDoc = await firestore()
+                            .collection(COLLECTIONS.USERS)
+                            .doc(id)
+                            .get();
+                        
+                        const userData = userDoc.data();
+                        if (userData) {
+                            entries.push({
+                                userId: id,
+                                displayName: userData.displayName || 'User',
+                                score: 0,
+                                change: 0,
+                                photoURL: userData.photoURL,
+                                rank: 0,
+                                isCurrentUser: id === userId,
+                            });
+                        }
+                    } catch (e) {
+                        console.log('[Leaderboard] Could not fetch user profile for:', id);
+                    }
+                }
+            }
+
+            // Sort by score descending and assign ranks
+            entries.sort((a, b) => b.score - a.score);
+            entries.forEach((entry, index) => {
+                entry.rank = index + 1;
+            });
+
+            console.log('[Leaderboard] Final entries:', entries.length, entries.map(e => ({ name: e.displayName, score: e.score })));
+            return entries;
+        } catch (error) {
+            console.error('Error fetching leaderboard:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Get global leaderboard (top users)
+     */
+    async getGlobalLeaderboard(
         userId: string,
         timeFrame: 'week' | 'month' | 'allTime'
     ): Promise<LeaderboardEntry[]> {
@@ -701,7 +797,7 @@ export const leaderboardService = {
                 isCurrentUser: doc.id === userId,
             })) as LeaderboardEntry[];
         } catch (error) {
-            console.error('Error fetching leaderboard:', error);
+            console.error('Error fetching global leaderboard:', error);
             return [];
         }
     },

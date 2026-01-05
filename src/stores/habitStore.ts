@@ -1,9 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { syncManager } from '../services/sync';
 import { Habit, HabitLog } from '../types/habit';
 import { isHabitActiveForDate } from '../utils/frequency';
+
+// Helper to update user profile stats in Firebase (for social features)
+const updateUserProfileStats = async (
+  userId: string | null,
+  totalCompletions: number,
+  currentStreak: number
+) => {
+  if (!userId) return;
+  try {
+    await firestore().collection('users').doc(userId).set({
+      totalCompletions,
+      currentStreak,
+      lastActiveAt: firestore.Timestamp.now(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('[HabitStore] Error updating user profile stats:', error);
+  }
+};
 
 // Helper to get date string (local time, not UTC)
 const getDateString = (date: Date): string => {
@@ -93,7 +112,11 @@ interface HabitState {
   isLoading: boolean;
   lastSyncAt: number | null;
 
+  // User context for sync
+  _userId: string | null;
+
   // Actions
+  setUserId: (userId: string | null) => void;
   setSelectedDate: (date: string) => void;
   getHabitsForDate: (date: string) => Habit[];
   getLogForHabit: (habitId: string, date: string) => HabitLog | undefined;
@@ -121,6 +144,11 @@ export const useHabitStore = create<HabitState>()(
       selectedDate: getDateString(new Date()),
       isLoading: false,
       lastSyncAt: null,
+      _userId: null,
+
+      setUserId: (userId: string | null) => {
+        set({ _userId: userId });
+      },
 
       setSelectedDate: (date: string) => {
         set({ selectedDate: date });
@@ -218,6 +246,14 @@ export const useHabitStore = create<HabitState>()(
         // Also sync updated habit stats to Firebase
         if (updatedHabit) {
           syncManager.queueOperation('UPDATE', 'habit', updatedHabit);
+
+          // Update user profile stats for social features (non-blocking)
+          const { _userId, habits, logs: allLogs } = get();
+          if (_userId) {
+            const totalUserCompletions = allLogs.filter(l => l.status === 'completed').length;
+            const maxStreak = habits.reduce((max, h) => Math.max(max, h.currentStreak), 0);
+            updateUserProfileStats(_userId, totalUserCompletions, maxStreak);
+          }
         }
       },
 

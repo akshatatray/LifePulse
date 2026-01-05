@@ -1,12 +1,14 @@
 /**
  * LifePulse - Gamification Store
  * Manages badges, points, streak freezes, and achievements
+ * Syncs with Firebase for cross-device persistence
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { Badge, getBadgeById } from '../data/badges';
+import { gamificationService, GamificationData } from '../services/gamificationFirestore';
 
 export interface UnlockedBadge {
     badgeId: string;
@@ -35,7 +37,18 @@ interface GamificationState {
     // Level system
     level: number;
 
+    // User context for Firebase sync
+    _userId: string | null;
+    _displayName: string;
+    _isSyncing: boolean;
+
     // Actions
+    setUserId: (userId: string | null, displayName?: string) => void;
+    syncFromFirebase: () => Promise<void>;
+    syncToFirebase: () => Promise<void>;
+    clearData: () => void;
+    loadFromFirebaseData: (data: GamificationData) => void;
+
     unlockBadge: (badgeId: string) => boolean;
     markBadgeNotified: (badgeId: string) => void;
     addPoints: (points: number) => void;
@@ -86,22 +99,104 @@ const getTotalXPForLevel = (level: number): number => {
     return total;
 };
 
+// Default state values
+const DEFAULT_STATE = {
+    totalPoints: 0,
+    unlockedBadges: [] as UnlockedBadge[],
+    streakFreezes: 1, // Start with 1 free streak freeze
+    lastStreakFreezeUsed: null as string | null,
+    perfectDays: 0,
+    consecutivePerfectDays: 0,
+    earlyBirdCount: 0,
+    nightOwlCount: 0,
+    comebackCount: 0,
+    level: 1,
+    _userId: null as string | null,
+    _displayName: 'User',
+    _isSyncing: false,
+};
+
 export const useGamificationStore = create<GamificationState>()(
     persist(
         (set, get) => ({
-            totalPoints: 0,
-            unlockedBadges: [],
-            streakFreezes: 1, // Start with 1 free streak freeze
-            lastStreakFreezeUsed: null,
-            perfectDays: 0,
-            consecutivePerfectDays: 0,
-            earlyBirdCount: 0,
-            nightOwlCount: 0,
-            comebackCount: 0,
-            level: 1,
+            ...DEFAULT_STATE,
+
+            setUserId: (userId: string | null, displayName = 'User') => {
+                set({ _userId: userId, _displayName: displayName });
+            },
+
+            clearData: () => {
+                console.log('[Gamification] Clearing local data');
+                set({
+                    ...DEFAULT_STATE,
+                    _userId: get()._userId, // Preserve userId
+                    _displayName: get()._displayName,
+                });
+            },
+
+            loadFromFirebaseData: (data: GamificationData) => {
+                console.log('[Gamification] Loading from Firebase data');
+                set({
+                    totalPoints: data.totalPoints,
+                    level: data.level,
+                    unlockedBadges: data.unlockedBadges,
+                    streakFreezes: data.streakFreezes,
+                    lastStreakFreezeUsed: data.lastStreakFreezeUsed,
+                    perfectDays: data.perfectDays,
+                    consecutivePerfectDays: data.consecutivePerfectDays,
+                    earlyBirdCount: data.earlyBirdCount,
+                    nightOwlCount: data.nightOwlCount,
+                    comebackCount: data.comebackCount,
+                });
+            },
+
+            syncFromFirebase: async () => {
+                const { _userId, _isSyncing } = get();
+                if (!_userId || _isSyncing) return;
+
+                set({ _isSyncing: true });
+
+                try {
+                    const data = await gamificationService.getData(_userId);
+                    if (data) {
+                        get().loadFromFirebaseData(data);
+                        console.log('[Gamification] Synced from Firebase');
+                    } else {
+                        // No data in Firebase, initialize with defaults
+                        console.log('[Gamification] No Firebase data, initializing...');
+                        await gamificationService.initializeForNewUser(_userId);
+                    }
+                } catch (error) {
+                    console.error('[Gamification] Error syncing from Firebase:', error);
+                } finally {
+                    set({ _isSyncing: false });
+                }
+            },
+
+            syncToFirebase: async () => {
+                const state = get();
+                if (!state._userId || state._isSyncing) return;
+
+                try {
+                    await gamificationService.saveData(state._userId, {
+                        totalPoints: state.totalPoints,
+                        level: state.level,
+                        unlockedBadges: state.unlockedBadges,
+                        streakFreezes: state.streakFreezes,
+                        lastStreakFreezeUsed: state.lastStreakFreezeUsed,
+                        perfectDays: state.perfectDays,
+                        consecutivePerfectDays: state.consecutivePerfectDays,
+                        earlyBirdCount: state.earlyBirdCount,
+                        nightOwlCount: state.nightOwlCount,
+                        comebackCount: state.comebackCount,
+                    });
+                } catch (error) {
+                    console.error('[Gamification] Error syncing to Firebase:', error);
+                }
+            },
 
             unlockBadge: (badgeId: string) => {
-                const { unlockedBadges, totalPoints } = get();
+                const { unlockedBadges, totalPoints, _userId, _displayName } = get();
 
                 // Check if already unlocked
                 if (unlockedBadges.some((b) => b.badgeId === badgeId)) {
@@ -126,19 +221,34 @@ export const useGamificationStore = create<GamificationState>()(
                     level: newLevel,
                 });
 
+                // Sync to Firebase (non-blocking)
+                if (_userId) {
+                    gamificationService.unlockBadge(_userId, newUnlockedBadge).catch(console.error);
+                    gamificationService.addPoints(_userId, badge.points, _displayName).catch(console.error);
+                }
+
                 return true;
             },
 
             markBadgeNotified: (badgeId: string) => {
-                set((state) => ({
-                    unlockedBadges: state.unlockedBadges.map((b) =>
+                const { _userId } = get();
+
+                set((state) => {
+                    const newBadges = state.unlockedBadges.map((b) =>
                         b.badgeId === badgeId ? { ...b, notified: true } : b
-                    ),
-                }));
+                    );
+
+                    // Sync to Firebase (non-blocking)
+                    if (_userId) {
+                        gamificationService.updateFields(_userId, { unlockedBadges: newBadges }).catch(console.error);
+                    }
+
+                    return { unlockedBadges: newBadges };
+                });
             },
 
             addPoints: (points: number) => {
-                const { totalPoints } = get();
+                const { totalPoints, _userId, _displayName } = get();
                 const newPoints = totalPoints + points;
                 const newLevel = calculateLevel(newPoints);
 
@@ -146,10 +256,15 @@ export const useGamificationStore = create<GamificationState>()(
                     totalPoints: newPoints,
                     level: newLevel,
                 });
+
+                // Sync to Firebase and update leaderboard (non-blocking)
+                if (_userId) {
+                    gamificationService.addPoints(_userId, points, _displayName).catch(console.error);
+                }
             },
 
             useStreakFreeze: () => {
-                const { streakFreezes, lastStreakFreezeUsed } = get();
+                const { streakFreezes, lastStreakFreezeUsed, _userId } = get();
 
                 // Check if already used today
                 const today = new Date().toISOString().split('T')[0];
@@ -162,41 +277,112 @@ export const useGamificationStore = create<GamificationState>()(
                     return false;
                 }
 
+                const newCount = streakFreezes - 1;
+
                 set({
-                    streakFreezes: streakFreezes - 1,
+                    streakFreezes: newCount,
                     lastStreakFreezeUsed: today,
                 });
+
+                // Sync to Firebase (non-blocking)
+                if (_userId) {
+                    gamificationService.useStreakFreeze(_userId, newCount, today).catch(console.error);
+                }
 
                 return true;
             },
 
             addStreakFreeze: (count = 1) => {
-                set((state) => ({
-                    streakFreezes: state.streakFreezes + count,
-                }));
+                const { _userId } = get();
+
+                set((state) => {
+                    const newCount = state.streakFreezes + count;
+
+                    // Sync to Firebase (non-blocking)
+                    if (_userId) {
+                        gamificationService.updateFields(_userId, { streakFreezes: newCount }).catch(console.error);
+                    }
+
+                    return { streakFreezes: newCount };
+                });
             },
 
             incrementPerfectDays: () => {
-                set((state) => ({
-                    perfectDays: state.perfectDays + 1,
-                    consecutivePerfectDays: state.consecutivePerfectDays + 1,
-                }));
+                const { _userId } = get();
+
+                set((state) => {
+                    const newPerfectDays = state.perfectDays + 1;
+                    const newConsecutive = state.consecutivePerfectDays + 1;
+
+                    // Sync to Firebase (non-blocking)
+                    if (_userId) {
+                        gamificationService.updateFields(_userId, {
+                            perfectDays: newPerfectDays,
+                            consecutivePerfectDays: newConsecutive,
+                        }).catch(console.error);
+                    }
+
+                    return {
+                        perfectDays: newPerfectDays,
+                        consecutivePerfectDays: newConsecutive,
+                    };
+                });
             },
 
             resetConsecutivePerfectDays: () => {
+                const { _userId } = get();
+
                 set({ consecutivePerfectDays: 0 });
+
+                // Sync to Firebase (non-blocking)
+                if (_userId) {
+                    gamificationService.updateFields(_userId, { consecutivePerfectDays: 0 }).catch(console.error);
+                }
             },
 
             incrementEarlyBird: () => {
-                set((state) => ({ earlyBirdCount: state.earlyBirdCount + 1 }));
+                const { _userId } = get();
+
+                set((state) => {
+                    const newCount = state.earlyBirdCount + 1;
+
+                    // Sync to Firebase (non-blocking)
+                    if (_userId) {
+                        gamificationService.updateFields(_userId, { earlyBirdCount: newCount }).catch(console.error);
+                    }
+
+                    return { earlyBirdCount: newCount };
+                });
             },
 
             incrementNightOwl: () => {
-                set((state) => ({ nightOwlCount: state.nightOwlCount + 1 }));
+                const { _userId } = get();
+
+                set((state) => {
+                    const newCount = state.nightOwlCount + 1;
+
+                    // Sync to Firebase (non-blocking)
+                    if (_userId) {
+                        gamificationService.updateFields(_userId, { nightOwlCount: newCount }).catch(console.error);
+                    }
+
+                    return { nightOwlCount: newCount };
+                });
             },
 
             incrementComeback: () => {
-                set((state) => ({ comebackCount: state.comebackCount + 1 }));
+                const { _userId } = get();
+
+                set((state) => {
+                    const newCount = state.comebackCount + 1;
+
+                    // Sync to Firebase (non-blocking)
+                    if (_userId) {
+                        gamificationService.updateFields(_userId, { comebackCount: newCount }).catch(console.error);
+                    }
+
+                    return { comebackCount: newCount };
+                });
             },
 
             isBadgeUnlocked: (badgeId: string) => {
@@ -236,8 +422,8 @@ export const useGamificationStore = create<GamificationState>()(
                 nightOwlCount: state.nightOwlCount,
                 comebackCount: state.comebackCount,
                 level: state.level,
+                // Don't persist _userId, _displayName - set on login
             }),
         }
     )
 );
-

@@ -215,12 +215,12 @@ export default function LoginScreen() {
             />
 
             {/* Demo credentials hint */}
-            <View style={styles.demoHint}>
+            {/* <View style={styles.demoHint}>
               <Feather name="info" size={14} color={colors.text.muted} />
               <Text style={styles.demoHintText}>
                 Demo: akshatatray / 123456
               </Text>
-            </View>
+            </View> */}
           </Animated.View>
 
           {/* Divider */}

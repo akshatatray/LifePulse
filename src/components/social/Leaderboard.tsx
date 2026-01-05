@@ -210,35 +210,50 @@ const TopThreeCard = ({ entries }: TopThreeCardProps) => {
 export const Leaderboard = () => {
     const user = useAuthStore((state) => state.user);
     const { leaderboard, filter, setFilter, fetchLeaderboard, currentUserRank } = useLeaderboard();
+    const friends = useSocialStore((state) => state.friends);
+    const fetchFriends = useSocialStore((state) => state.fetchFriends);
     const isLoading = useSocialStore((state) => state.isLoading);
     const haptics = useHaptics();
 
-    // Refetch when filter changes
+    // Fetch friends on mount
     useEffect(() => {
         if (user?.uid) {
+            console.log('[Leaderboard] Fetching friends for user:', user.uid);
+            fetchFriends(user.uid);
+        }
+    }, [user?.uid]);
+
+    // Fetch leaderboard when friends are loaded or filter changes
+    useEffect(() => {
+        if (user?.uid) {
+            console.log('[Leaderboard] Friends updated, count:', friends.length, 'filter:', filter);
+            // Always fetch leaderboard - it will include current user even if no friends
             fetchLeaderboard(user.uid);
         }
-    }, [filter, user?.uid]);
+    }, [filter, user?.uid, friends.length]);
 
     const handleFilterChange = (newFilter: 'week' | 'month' | 'allTime') => {
         haptics.light();
         setFilter(newFilter);
     };
 
-    const top3 = leaderboard.slice(0, 3);
-    const rest = leaderboard.slice(3);
+    // Show podium if 3+ entries, otherwise show all entries in list
+    const showPodium = leaderboard.length >= 3;
+    const top3 = showPodium ? leaderboard.slice(0, 3) : [];
+    const listEntries = showPodium ? leaderboard.slice(3) : leaderboard;
+    const friendCount = friends.filter(f => f.status === 'accepted').length;
 
     return (
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.title}>Leaderboard</Text>
-                    {currentUserRank && (
-                        <Text style={styles.subtitle}>
-                            You're ranked #{currentUserRank}
-                        </Text>
-                    )}
+                    <Text style={styles.title}>Friends Leaderboard</Text>
+                    <Text style={styles.subtitle}>
+                        {friendCount > 0 
+                            ? `Compete with ${friendCount} friend${friendCount !== 1 ? 's' : ''}`
+                            : 'Add friends to compete!'}
+                    </Text>
                 </View>
             </View>
 
@@ -273,23 +288,23 @@ export const Leaderboard = () => {
                 </View>
             )}
 
-            {/* Top 3 Podium */}
-            {top3.length >= 3 && <TopThreeCard entries={top3} />}
+            {/* Top 3 Podium - only show if 3+ entries */}
+            {showPodium && <TopThreeCard entries={top3} />}
 
-            {/* Rest of leaderboard */}
+            {/* Leaderboard list - shows all entries if < 3, or 4+ entries otherwise */}
             <View style={styles.leaderboardList}>
-                {rest.map((entry, index) => (
+                {listEntries.map((entry, index) => (
                     <LeaderboardRow key={entry.userId} entry={entry} index={index} />
                 ))}
             </View>
 
-            {/* Empty state */}
-            {!isLoading && leaderboard.length === 0 && (
+            {/* Empty state - only show if no friends */}
+            {!isLoading && leaderboard.length === 0 && friendCount === 0 && (
                 <Animated.View entering={FadeIn.duration(300)} style={styles.emptyState}>
                     <Text style={styles.emptyIcon}>🏆</Text>
                     <Text style={styles.emptyTitle}>No rankings yet</Text>
                     <Text style={styles.emptySubtitle}>
-                        Complete habits to climb the leaderboard!
+                        Add friends to see them on the leaderboard!
                     </Text>
                 </Animated.View>
             )}
