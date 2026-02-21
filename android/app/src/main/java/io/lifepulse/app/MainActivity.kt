@@ -1,4 +1,4 @@
-package com.lifepulse.app
+package io.lifepulse.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

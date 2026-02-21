@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, Pressable, ScrollView, Modal } from 'react-native';
+import { Keyboard, StyleSheet, View, Text, Pressable, ScrollView, Modal } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -41,6 +41,8 @@ export const IconPicker = ({ selectedIcon, onSelectIcon }: IconPickerProps) => {
   }));
 
   const handlePress = () => {
+    // Dismiss keyboard to prevent it from reopening when modal closes
+    Keyboard.dismiss();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsModalVisible(true);
   };

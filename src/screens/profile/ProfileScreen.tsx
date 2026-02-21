@@ -13,6 +13,7 @@ import { Badge, BadgeUnlockAnimation } from '../../components/gamification/Badge
 import { LevelProgress, LevelUpAnimation } from '../../components/gamification/LevelProgress';
 import { StreakFreezeCard } from '../../components/gamification/StreakFreeze';
 import { PremiumStatus } from '../../components/premium';
+import { DeleteAccountFlow } from '../../components/settings';
 import { Card } from '../../components/ui';
 import { BadgeCategory, BADGES, CATEGORY_ICONS, getBadgesByCategory, sortBadgesByRarity } from '../../data/badges';
 import { useAchievements } from '../../hooks/useAchievements';
@@ -62,6 +63,7 @@ export default function ProfileScreen() {
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [selectedBadgeCategory, setSelectedBadgeCategory] = useState<BadgeCategory>('starter');
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
 
   // Calculate stats from real data
   const stats = useMemo(() => {
@@ -446,6 +448,22 @@ export default function ProfileScreen() {
             <Text style={styles.menuItemText}>Privacy Policy</Text>
             <Feather name="chevron-right" size={20} color={colors.text.muted} />
           </Card>
+
+          {/* Delete Account */}
+          <Pressable 
+            onPress={() => {
+              haptics.medium();
+              setShowDeleteAccount(true);
+            }}
+          >
+            <Card style={styles.menuItem}>
+              <View style={[styles.menuItemIcon, { backgroundColor: colors.accent.error + '15' }]}>
+                <Feather name="trash-2" size={20} color={colors.accent.error} />
+              </View>
+              <Text style={[styles.menuItemText, { color: colors.accent.error }]}>Delete Account</Text>
+              <Feather name="chevron-right" size={20} color={colors.accent.error + '60'} />
+            </Card>
+          </Pressable>
         </Animated.View>
 
         {/* Logout Button */}
@@ -479,6 +497,12 @@ export default function ProfileScreen() {
         visible={showLevelUp}
         newLevel={level}
         onDismiss={() => setShowLevelUp(false)}
+      />
+
+      {/* Delete Account Flow */}
+      <DeleteAccountFlow 
+        visible={showDeleteAccount}
+        onClose={() => setShowDeleteAccount(false)}
       />
     </View>
   );

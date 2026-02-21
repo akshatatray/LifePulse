@@ -225,11 +225,12 @@ export const friendService = {
                 .doc(userId)
                 .get();
             const userData = userSnapshot.data();
+            const accepterName = userData?.displayName || 'User';
 
             const reverseDoc = getUserFriendsRef(friendId).doc(userId);
             batch.set(reverseDoc, {
                 userId: userId,
-                displayName: userData?.displayName || 'User',
+                displayName: accepterName,
                 currentStreak: 0,
                 totalCompletions: 0,
                 level: 1,

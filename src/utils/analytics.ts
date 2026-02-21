@@ -94,15 +94,24 @@ export const generateHeatmapData = (
   habits: Habit[],
   logs: HabitLog[],
   monthsBack: number = 1,
-  monthsForward: number = 1
+  monthsForward: number = 1,
+  options?: {
+    /**
+     * If false, we do not generate any future months/days (the heatmap ends at today).
+     * Default: true (backwards compatible with previous behavior).
+     */
+    includeFuture?: boolean;
+  }
 ): HeatmapMonth[] => {
   const result: HeatmapMonth[] = [];
   const today = new Date();
   const todayString = getDateString(today);
+  const includeFuture = options?.includeFuture ?? true;
   
   // Generate from (monthsBack) months ago to (monthsForward) months ahead
   // This creates: [past month, current month, future month]
-  for (let m = -monthsBack; m <= monthsForward; m++) {
+  const maxForward = includeFuture ? monthsForward : 0;
+  for (let m = -monthsBack; m <= maxForward; m++) {
     const targetDate = new Date(today.getFullYear(), today.getMonth() + m, 1);
     const year = targetDate.getFullYear();
     const monthIndex = targetDate.getMonth();
@@ -119,6 +128,11 @@ export const generateHeatmapData = (
       
       // Check if this is a future date
       const isFuture = dateString > todayString;
+      // If we don't include future, stop at today (no future boxes at all)
+      if (!includeFuture && isFuture) {
+        break;
+      }
+
       // Calculate percentage only for past/today, 0 for future
       const percentage = isFuture ? 0 : getDailyCompletionPercentage(dateString, habits, logs);
       

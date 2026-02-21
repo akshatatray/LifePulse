@@ -1,4 +1,4 @@
-package com.lifepulse.app
+package io.lifepulse.app
 
 import android.app.Application
 import android.content.res.Configuration

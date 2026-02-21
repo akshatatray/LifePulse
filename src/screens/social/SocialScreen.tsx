@@ -303,31 +303,29 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   headerContent: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   title: {
     fontFamily: fontFamily.bold,
-    fontSize: fontSize['3xl'],
+    fontSize: fontSize['2xl'],
     color: colors.text.primary,
-    letterSpacing: -0.5,
   },
   subtitle: {
     fontFamily: fontFamily.regular,
     fontSize: fontSize.sm,
-    color: colors.text.muted,
-    marginTop: 4,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
 
-  // Quick stats
+  // Quick Stats
   quickStats: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
   quickStatCard: {
     flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.lg,
+    padding: spacing.md,
     alignItems: 'center',
   },
   quickStatValue: {
@@ -336,13 +334,13 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   quickStatLabel: {
-    fontFamily: fontFamily.regular,
+    fontFamily: fontFamily.medium,
     fontSize: fontSize.xs,
-    color: colors.text.muted,
-    marginTop: 2,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
 
-  // Tab bar
+  // Tab Bar
   tabBarContainer: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
@@ -359,7 +357,7 @@ const styles = StyleSheet.create({
     top: spacing.xs,
     bottom: spacing.xs,
     width: (SCREEN_WIDTH - spacing.lg * 2 - spacing.xs * 2) / TABS.length,
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
   },
   tabIndicatorGradient: {
@@ -371,11 +369,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.sm,
-    gap: 6,
+    gap: spacing.xs,
     zIndex: 1,
   },
   tabLabel: {
-    fontFamily: fontFamily.medium,
+    fontFamily: fontFamily.semiBold,
     fontSize: fontSize.xs,
     color: colors.text.muted,
   },
@@ -389,10 +387,10 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing['2xl'],
+    paddingBottom: 120, // Space for tab bar
   },
 
-  // Empty state
+  // Empty State
   emptyIcon: {
     fontSize: 64,
     marginBottom: spacing.lg,
@@ -407,8 +405,8 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontFamily: fontFamily.regular,
     fontSize: fontSize.base,
-    color: colors.text.muted,
+    color: colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
   },
 });

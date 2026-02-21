@@ -6,7 +6,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     Easing,
     FadeIn,
@@ -87,6 +87,7 @@ export const TimePicker = ({
     }, [value]);
 
     const handleOpen = () => {
+        Keyboard.dismiss();
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsOpen(true);
     };

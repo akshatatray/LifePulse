@@ -87,9 +87,9 @@ export default function InsightsScreen() {
   const { habits, logs } = useHabitStore();
   
   // Calculate all analytics data
-  // Show 2 months back, current month in middle, 2 months forward
+  // Show the last ~5 months (including current), up to today only (no future dates)
   const heatmapData = useMemo(
-    () => generateHeatmapData(habits, logs, 2, 2),
+    () => generateHeatmapData(habits, logs, 4, 0, { includeFuture: false }),
     [habits, logs]
   );
   
@@ -197,14 +197,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
   },
-  // Stats Banner styles
+  section: {
+    marginBottom: spacing.lg,
+  },
+  
+  // Stats Banner
   statsBanner: {
     flexDirection: 'row',
     backgroundColor: colors.background.card,
     borderRadius: borderRadius.xl,
-    paddingVertical: spacing.lg,
+    padding: spacing.md,
     marginBottom: spacing.lg,
   },
   statItemWrapper: {
@@ -226,7 +229,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: fontFamily.bold,
-    fontSize: fontSize.xl,
+    fontSize: fontSize.lg,
     color: colors.text.primary,
   },
   statLabel: {
@@ -238,33 +241,33 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: colors.border.default,
+    backgroundColor: colors.border.subtle,
   },
-  section: {
-    marginBottom: spacing.lg,
-  },
+  
+  // Tip Card
   tipCard: {
-    backgroundColor: colors.accent.info + '10',
-    borderRadius: borderRadius.lg,
+    backgroundColor: colors.background.card,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.accent.info + '30',
+    marginBottom: spacing.lg,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent.info,
   },
   tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
     marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   tipTitle: {
     fontFamily: fontFamily.semiBold,
-    fontSize: fontSize.base,
+    fontSize: fontSize.sm,
     color: colors.accent.info,
   },
   tipText: {
     fontFamily: fontFamily.regular,
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    lineHeight: fontSize.sm * 1.5,
+    lineHeight: 20,
   },
 });

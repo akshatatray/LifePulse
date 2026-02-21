@@ -36,7 +36,7 @@ export default function EditHabitScreen() {
   const route = useRoute<RouteProp<EditHabitRouteParams, 'EditHabit'>>();
   const insets = useSafeAreaInsets();
 
-  const { habits, deleteHabit } = useHabitStore();
+  const { habits, deleteHabit, updateHabit } = useHabitStore();
   const habit = habits.find((h) => h.id === route.params?.habitId);
 
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,11 +60,14 @@ export default function EditHabitScreen() {
       reminders: data.reminders,
     };
 
-    useHabitStore.setState((state) => ({
-      habits: state.habits.map((h) =>
-        h.id === habit.id ? updatedHabit : h
-      ),
-    }));
+    // Persist in store + queue for Firestore sync (avoids reminder time "resetting" after a sync)
+    updateHabit(habit.id, {
+      title: data.title,
+      icon: data.icon,
+      color: data.color,
+      frequencyConfig: data.frequencyConfig,
+      reminders: data.reminders,
+    });
 
     // Update notifications
     await notificationService.updateHabitReminders(updatedHabit);

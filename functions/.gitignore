@@ -1,0 +1,16 @@
+# Compiled JavaScript files
+lib/
+
+# Node modules
+node_modules/
+
+# Local configuration
+.runtimeconfig.json
+.secret.local
+
+# IDE
+.idea/
+.vscode/
+
+# Log files
+*.log

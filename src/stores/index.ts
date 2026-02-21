@@ -17,3 +17,4 @@ export { useFeatureGate, useHabitLimit, usePremiumStore } from './premiumStore';
 
 export { useChallenges, useFriends, useLeaderboard, useSocialStore } from './socialStore';
 
+export { useNotificationStore, useNotificationBadge } from './notificationStore';

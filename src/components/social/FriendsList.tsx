@@ -8,8 +8,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -197,7 +200,11 @@ const AddFriendModal = ({ visible, onClose }: AddFriendModalProps) => {
             animationType="fade"
             onRequestClose={handleClose}
         >
-            <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView 
+                style={styles.modalOverlay}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
                 <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
 
                 <Animated.View
@@ -223,6 +230,7 @@ const AddFriendModal = ({ visible, onClose }: AddFriendModalProps) => {
                             autoCapitalize="none"
                             autoCorrect={false}
                             returnKeyType="search"
+                            onSubmitEditing={handleSearch}
                         />
                         {isSearching && (
                             <ActivityIndicator size="small" color={colors.accent.success} />
@@ -243,120 +251,127 @@ const AddFriendModal = ({ visible, onClose }: AddFriendModalProps) => {
                         </LinearGradient>
                     </Pressable>
 
-                    {/* Search results */}
-                    {searchResults.length > 0 && (
-                        <View style={styles.searchResults}>
-                            <Text style={styles.searchResultsTitle}>Results</Text>
-                            {searchResults.map((result) => {
-                                const isExistingFriend = !!result.isFriend;
-                                const isPendingRequest = result.requestSent && !result.isFriend;
-                                const disableButton = isSending || isPendingRequest || isExistingFriend;
-                                const iconName = isExistingFriend
-                                    ? 'check'
-                                    : isPendingRequest
-                                        ? 'clock'
-                                        : 'user-plus';
-                                const iconColor = disableButton ? colors.text.muted : colors.accent.success;
-                                const buttonBg = isExistingFriend
-                                    ? colors.accent.success + '20'
-                                    : isPendingRequest
-                                        ? colors.accent.warning + '20'
-                                        : colors.accent.success + '20';
+                    {/* Search results - scrollable */}
+                    <ScrollView 
+                        style={styles.searchResultsScrollView}
+                        contentContainerStyle={styles.searchResultsContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {searchResults.length > 0 && (
+                            <View style={styles.searchResults}>
+                                <Text style={styles.searchResultsTitle}>Results</Text>
+                                {searchResults.map((result) => {
+                                    const isExistingFriend = !!result.isFriend;
+                                    const isPendingRequest = result.requestSent && !result.isFriend;
+                                    const disableButton = isSending || isPendingRequest || isExistingFriend;
+                                    const iconName = isExistingFriend
+                                        ? 'check'
+                                        : isPendingRequest
+                                            ? 'clock'
+                                            : 'user-plus';
+                                    const iconColor = disableButton ? colors.text.muted : colors.accent.success;
+                                    const buttonBg = isExistingFriend
+                                        ? colors.accent.success + '20'
+                                        : isPendingRequest
+                                            ? colors.accent.warning + '20'
+                                            : colors.accent.success + '20';
 
-                                return (
-                                    <View key={result.userId} style={styles.searchResultCard}>
-                                        <View style={styles.searchResultInfo}>
-                                            <View
-                                                style={[
-                                                    styles.avatar,
-                                                    styles.smallAvatar,
-                                                    { backgroundColor: '#3B82F6' },
-                                                ]}
-                                            >
-                                                <Text style={[styles.avatarText, styles.smallAvatarText]}>
-                                                    {result.displayName.charAt(0).toUpperCase()}
-                                                </Text>
-                                            </View>
-                                            <View style={styles.searchResultTextContainer}>
-                                                <Text style={styles.searchResultName}>
-                                                    {result.displayName}
-                                                </Text>
-                                                {/* Status badge */}
-                                                {(isExistingFriend || isPendingRequest) && (
-                                                    <View
-                                                        style={[
-                                                            styles.searchResultStatusBadge,
-                                                            {
-                                                                backgroundColor: isExistingFriend
-                                                                    ? colors.accent.success + '15'
-                                                                    : colors.accent.warning + '15',
-                                                            },
-                                                        ]}
-                                                    >
-                                                        <Feather
-                                                            name={isExistingFriend ? 'user-check' : 'clock'}
-                                                            size={10}
-                                                            color={
-                                                                isExistingFriend
-                                                                    ? colors.accent.success
-                                                                    : colors.accent.warning
-                                                            }
-                                                        />
-                                                        <Text
+                                    return (
+                                        <View key={result.userId} style={styles.searchResultCard}>
+                                            <View style={styles.searchResultInfo}>
+                                                <View
+                                                    style={[
+                                                        styles.avatar,
+                                                        styles.smallAvatar,
+                                                        { backgroundColor: '#3B82F6' },
+                                                    ]}
+                                                >
+                                                    <Text style={[styles.avatarText, styles.smallAvatarText]}>
+                                                        {result.displayName.charAt(0).toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                                <View style={styles.searchResultTextContainer}>
+                                                    <Text style={styles.searchResultName}>
+                                                        {result.displayName}
+                                                    </Text>
+                                                    {/* Status badge */}
+                                                    {(isExistingFriend || isPendingRequest) && (
+                                                        <View
                                                             style={[
-                                                                styles.searchResultStatusText,
+                                                                styles.searchResultStatusBadge,
                                                                 {
-                                                                    color: isExistingFriend
-                                                                        ? colors.accent.success
-                                                                        : colors.accent.warning,
+                                                                    backgroundColor: isExistingFriend
+                                                                        ? colors.accent.success + '15'
+                                                                        : colors.accent.warning + '15',
                                                                 },
                                                             ]}
                                                         >
-                                                            {isExistingFriend ? 'Friends' : 'Request Sent'}
-                                                        </Text>
-                                                    </View>
-                                                )}
+                                                            <Feather
+                                                                name={isExistingFriend ? 'user-check' : 'clock'}
+                                                                size={10}
+                                                                color={
+                                                                    isExistingFriend
+                                                                        ? colors.accent.success
+                                                                        : colors.accent.warning
+                                                                }
+                                                            />
+                                                            <Text
+                                                                style={[
+                                                                    styles.searchResultStatusText,
+                                                                    {
+                                                                        color: isExistingFriend
+                                                                            ? colors.accent.success
+                                                                            : colors.accent.warning,
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                {isExistingFriend ? 'Friends' : 'Request Sent'}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                </View>
                                             </View>
+                                            <Pressable
+                                                onPress={() => handleSendRequest(result)}
+                                                disabled={disableButton}
+                                                style={[
+                                                    styles.addRequestButton,
+                                                    { backgroundColor: buttonBg },
+                                                    disableButton && styles.addRequestButtonDisabled,
+                                                ]}
+                                            >
+                                                <Feather
+                                                    name={iconName as any}
+                                                    size={16}
+                                                    color={
+                                                        isExistingFriend
+                                                            ? colors.accent.success
+                                                            : isPendingRequest
+                                                                ? colors.accent.warning
+                                                                : iconColor
+                                                    }
+                                                />
+                                            </Pressable>
                                         </View>
-                                        <Pressable
-                                            onPress={() => handleSendRequest(result)}
-                                            disabled={disableButton}
-                                            style={[
-                                                styles.addRequestButton,
-                                                { backgroundColor: buttonBg },
-                                                disableButton && styles.addRequestButtonDisabled,
-                                            ]}
-                                        >
-                                            <Feather
-                                                name={iconName as any}
-                                                size={16}
-                                                color={
-                                                    isExistingFriend
-                                                        ? colors.accent.success
-                                                        : isPendingRequest
-                                                            ? colors.accent.warning
-                                                            : iconColor
-                                                }
-                                            />
-                                        </Pressable>
-                                    </View>
-                                );
-                            })}
-                        </View>
-                    )}
+                                    );
+                                })}
+                            </View>
+                        )}
 
-                    {/* No results */}
-                    {searchResults.length === 0 && hasSearched && searchQuery.trim() && !isSearching && (
-                        <View style={styles.noResults}>
-                            <Text style={styles.noResultsText}>No users found</Text>
-                        </View>
-                    )}
+                        {/* No results */}
+                        {searchResults.length === 0 && hasSearched && searchQuery.trim() && !isSearching && (
+                            <View style={styles.noResults}>
+                                <Text style={styles.noResultsText}>No users found</Text>
+                            </View>
+                        )}
+                    </ScrollView>
 
                     <Pressable onPress={handleClose} style={styles.cancelButton}>
                         <Text style={styles.cancelButtonText}>Close</Text>
                     </Pressable>
                 </Animated.View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -827,7 +842,13 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
         borderRadius: borderRadius.lg,
         alignItems: 'center',
-        marginBottom: spacing.lg,
+    },
+    searchResultsScrollView: {
+        maxHeight: 200,
+        marginTop: spacing.md,
+    },
+    searchResultsContent: {
+        flexGrow: 1,
     },
     searchButtonText: {
         fontFamily: fontFamily.bold,
@@ -835,7 +856,7 @@ const styles = StyleSheet.create({
         color: colors.text.inverse,
     },
     searchResults: {
-        marginBottom: spacing.lg,
+        marginBottom: spacing.sm,
     },
     searchResultsTitle: {
         fontFamily: fontFamily.semiBold,
@@ -903,6 +924,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
         borderRadius: borderRadius.lg,
         alignItems: 'center',
+        marginTop: spacing.md,
     },
     cancelButtonText: {
         fontFamily: fontFamily.semiBold,

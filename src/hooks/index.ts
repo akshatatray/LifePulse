@@ -6,5 +6,6 @@
 export { useAchievements } from './useAchievements';
 export { useHaptics } from './useHaptics';
 export { useNetwork, useSyncStatus } from './useNetwork';
+export { useNotificationActions } from './useNotificationActions';
 export { useSound } from './useSound';
 

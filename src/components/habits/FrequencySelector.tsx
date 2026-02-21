@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Keyboard, View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -132,6 +132,7 @@ export const FrequencySelector = ({
       {/* Current selection summary */}
       <Pressable
         onPress={() => {
+          Keyboard.dismiss();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setIsExpanded(!isExpanded);
         }}

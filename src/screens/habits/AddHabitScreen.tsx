@@ -1,4 +1,3 @@
-import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -10,17 +9,12 @@ import { useHabitStore } from '../../stores/habitStore';
 import { borderRadius, colors, spacing, textStyles } from '../../theme';
 import { FrequencyConfig } from '../../types/habit';
 
-interface ReminderConfig {
-  enabled: boolean;
-  times: string[];
-}
-
 interface HabitFormData {
   title: string;
   icon: string;
   color: string;
   frequencyConfig: FrequencyConfig;
-  reminders: ReminderConfig;
+  reminders: { enabled: boolean; times: string[] };
 }
 
 export default function AddHabitScreen() {
@@ -29,52 +23,46 @@ export default function AddHabitScreen() {
   const addHabit = useHabitStore((state) => state.addHabit);
 
   const handleSubmit = async (data: HabitFormData) => {
-    // Create the habit
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    // Create the habit with all required fields
     const newHabit = addHabit({
-      title: data.title,
+      title: data.title.trim(),
       icon: data.icon,
       color: data.color,
       frequencyConfig: data.frequencyConfig,
       reminders: data.reminders,
     });
-
+    
     // Schedule notifications if reminders are enabled
-    if (data.reminders.enabled && data.reminders.times.length > 0 && newHabit) {
+    if (data.reminders.enabled && data.reminders.times.length > 0) {
       await notificationService.scheduleHabitReminders(newHabit);
     }
-
+    
     navigation.goBack();
   };
 
   const handleCancel = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
     navigation.goBack();
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, spacing.xl) }]}>
-      {/* Drag Handle */}
-      <View style={styles.dragHandleContainer}>
-        <View style={styles.dragHandle} />
-      </View>
-
-      {/* Header */}
-      <Animated.View
-        entering={FadeIn.duration(300)}
-        style={styles.header}
-      >
-        <Pressable onPress={handleCancel} style={styles.closeButton}>
-          <Feather name="x" size={24} color={colors.text.secondary} />
-        </Pressable>
-        <Text style={styles.title}>New Habit</Text>
-        <View style={styles.headerSpacer} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header with drag indicator */}
+      <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+        <View style={styles.dragIndicator} />
+        <View style={styles.headerRow}>
+          <Pressable onPress={handleCancel} style={styles.cancelButton}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </Pressable>
+          <Text style={styles.title}>New Habit</Text>
+          <View style={styles.cancelButton} />
+        </View>
       </Animated.View>
 
       {/* Form */}
-      <Animated.View
-        entering={FadeInDown.delay(100).duration(400)}
-        style={styles.formContainer}
-      >
+      <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.content}>
         <HabitForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}
@@ -88,46 +76,43 @@ export default function AddHabitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
-  },
-  dragHandleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.text.muted,
-    opacity: 0.4,
+    backgroundColor: colors.background.primary,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
   },
   header: {
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+  },
+  dragIndicator: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border.subtle,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.background.card,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
     ...textStyles.titleLarge,
     color: colors.text.primary,
   },
-  headerSpacer: {
-    width: 32,
+  cancelButton: {
+    minWidth: 60,
+    alignItems: 'flex-start',
   },
-  formContainer: {
+  cancelText: {
+    ...textStyles.bodyLarge,
+    color: colors.accent.success,
+  },
+  content: {
     flex: 1,
-    backgroundColor: colors.background.primary,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
   },
 });

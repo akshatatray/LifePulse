@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "186229900740-6m3go3b55ift17brioald50m83v475li.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lifepulse.app",
+            "certificate_hash": "8745d5130c270fb9a3d778a4729f825e6c24050b"
+          }
+        },
+        {
           "client_id": "186229900740-gqabtgfdes3u31kovqjhe8qu8qfkfu2j.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,57 @@
             {
               "client_id": "186229900740-gqabtgfdes3u31kovqjhe8qu8qfkfu2j.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "186229900740-h211pj3690pidia67244daij8kqjjb5l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lifepulse.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186229900740:android:7bf8be8112673fda991091",
+        "android_client_info": {
+          "package_name": "io.lifepulse.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "186229900740-tspf5g0vdf9j644g69jtmabffe6btjqo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.lifepulse.app",
+            "certificate_hash": "8745d5130c270fb9a3d778a4729f825e6c24050b"
+          }
+        },
+        {
+          "client_id": "186229900740-gqabtgfdes3u31kovqjhe8qu8qfkfu2j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAe-RxEfzW5N2ZmQDfOGSrCJ-k0Jcs1s2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "186229900740-gqabtgfdes3u31kovqjhe8qu8qfkfu2j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "186229900740-h211pj3690pidia67244daij8kqjjb5l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.lifepulse.app"
+              }
             }
           ]
         }

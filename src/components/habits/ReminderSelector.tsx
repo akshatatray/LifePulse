@@ -6,7 +6,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import Animated, {
     Easing,
     FadeIn,
@@ -53,6 +53,7 @@ export const ReminderSelector = ({
     const smoothEasing = Easing.bezier(0.25, 0.1, 0.25, 1);
 
     const handleToggle = (enabled: boolean) => {
+        Keyboard.dismiss();
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsExpanded(enabled);
 

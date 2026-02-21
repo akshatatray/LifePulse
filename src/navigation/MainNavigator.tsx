@@ -12,6 +12,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import AddHabitScreen from '../screens/habits/AddHabitScreen';
 import EditHabitScreen from '../screens/habits/EditHabitScreen';
 import PremiumScreen from '../screens/premium/PremiumScreen';
+import NotificationCenterScreen from '../screens/notifications/NotificationCenterScreen';
 
 // Types
 export type MainTabParamList = {
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   AddHabit: undefined;
   EditHabit: { habitId: string };
   Premium: undefined;
+  NotificationCenter: undefined;
 };
 
 // For backwards compatibility
@@ -135,6 +137,7 @@ export default function MainNavigator() {
         <RootStack.Screen name="AddHabit" component={AddHabitScreen} />
         <RootStack.Screen name="EditHabit" component={EditHabitScreen} />
         <RootStack.Screen name="Premium" component={PremiumScreen} />
+        <RootStack.Screen name="NotificationCenter" component={NotificationCenterScreen} />
       </RootStack.Group>
     </RootStack.Navigator>
   );

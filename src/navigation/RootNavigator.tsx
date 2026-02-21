@@ -2,7 +2,9 @@ import { NavigationContainer, Theme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useNotificationActions } from '../hooks';
 import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
+import { notificationService } from '../services/notifications';
 import { syncManager } from '../services/sync';
 import { useAuthStore } from '../stores/authStore';
 import { useGamificationStore } from '../stores/gamificationStore';
@@ -196,6 +198,32 @@ export default function RootNavigator() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Initialize notification permissions and categories when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user?.emailVerified) {
+      // Request permissions and set up notification categories (Done/Skip buttons)
+      notificationService.requestPermissions().then((granted) => {
+        if (granted) {
+          console.log('[RootNavigator] Notification permissions granted, categories set up');
+        }
+      });
+    }
+  }, [isAuthenticated, user?.emailVerified]);
+
+  // Set up notification action handlers (Done/Skip buttons)
+  useNotificationActions({
+    onHabitCompleted: (habitId) => {
+      console.log(`[RootNavigator] Habit ${habitId} completed via notification action`);
+    },
+    onHabitSkipped: (habitId) => {
+      console.log(`[RootNavigator] Habit ${habitId} skipped via notification action`);
+    },
+    onNotificationTapped: (habitId) => {
+      console.log(`[RootNavigator] Notification tapped for habit ${habitId}`);
+      // TODO: Navigate to habit detail or today screen
+    },
+  });
 
   // Show loading screen while hydrating, initializing auth, or syncing new user data
   if (!isHydrated || !isInitialized || isSyncing) {

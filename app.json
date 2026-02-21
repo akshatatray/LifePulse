@@ -17,7 +17,11 @@
         "expo-build-properties",
         {
           "ios": {
-            "useFrameworks": "static"
+            "useFrameworks": "static",
+            "newArchEnabled": true
+          },
+          "android": {
+            "newArchEnabled": true
           }
         }
       ]
@@ -39,7 +43,7 @@
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
-      "package": "com.lifepulse.app",
+      "package": "io.lifepulse.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

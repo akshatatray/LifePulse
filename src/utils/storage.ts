@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   SYNC_QUEUE: 'lifepulse-sync-queue',
   LAST_SYNC: 'lifepulse-last-sync',
   SETTINGS: 'lifepulse-settings',
+  HABIT_REMINDER_NOTIFICATION_IDS: 'lifepulse-habit-reminder-notification-ids',
 } as const;
 
 /**

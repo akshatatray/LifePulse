@@ -1,26 +1,29 @@
-import { useMemo, useCallback, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
-import { colors, spacing, textStyles, fontFamily, fontSize, borderRadius } from '../../theme';
-import { useHabitStore } from '../../stores/habitStore';
-import { useAuthStore } from '../../stores/authStore';
-import { useGamificationStore } from '../../stores/gamificationStore';
-import { useAchievements } from '../../hooks/useAchievements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BadgeUnlockAnimation } from '../../components/gamification/Badge';
 import {
-  DateStrip,
   DailyScoreRing,
-  HabitList,
+  DateStrip,
   EmptyState,
+  HabitList,
   PerfectDayBadge,
 } from '../../components/habits';
 import { OfflineBanner } from '../../components/ui';
-import { BadgeUnlockAnimation } from '../../components/gamification/Badge';
-import { Habit } from '../../types/habit';
+import { useAchievements } from '../../hooks/useAchievements';
 import { HomeStackParamList } from '../../navigation/MainNavigator';
+import { useAuthStore } from '../../stores/authStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
+import { useHabitStore } from '../../stores/habitStore';
+import { useNotificationBadge } from '../../stores/notificationStore';
+import { useSocialStore } from '../../stores/socialStore';
+import { borderRadius, colors, fontFamily, fontSize, spacing, textStyles } from '../../theme';
+import { Habit } from '../../types/habit';
 
 // Get greeting based on time of day
 const getGreeting = (): string => {
@@ -46,7 +49,25 @@ export default function TodayScreen() {
   const user = useAuthStore((state) => state.user);
   const { incrementPerfectDays } = useGamificationStore();
   const { checkAchievements, checkForPerfectDay, newlyUnlockedBadge, dismissBadgeNotification } = useAchievements();
-  
+
+  // Notification state
+  const pendingRequests = useSocialStore((state) => state.pendingRequests);
+  const sentRequests = useSocialStore((state) => state.sentRequests);
+  const fetchPendingRequests = useSocialStore((state) => state.fetchPendingRequests);
+  const fetchSentRequests = useSocialStore((state) => state.fetchSentRequests);
+  const { isNewSince, lastViewedFriendRequests } = useNotificationBadge();
+
+  // Calculate total notification count (incoming + sent)
+  const totalNotificationCount = pendingRequests.length + sentRequests.length;
+
+  // Fetch pending and sent requests on mount
+  useEffect(() => {
+    if (user?.uid) {
+      fetchPendingRequests(user.uid);
+      fetchSentRequests(user.uid);
+    }
+  }, [user?.uid]);
+
   const {
     selectedDate,
     setSelectedDate,
@@ -67,6 +88,11 @@ export default function TodayScreen() {
     navigation.navigate('EditHabit', { habitId: habit.id });
   };
 
+  const handleNotifications = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate('NotificationCenter' as any);
+  };
+
   // Handle habit completion with achievement check
   const handleComplete = useCallback((habitId: string) => {
     completeHabit(habitId, selectedDate);
@@ -79,7 +105,7 @@ export default function TodayScreen() {
 
   // Get habits for selected date - include allHabits in deps so it updates when streaks change
   const habits = useMemo(() => getHabitsForDate(selectedDate), [selectedDate, getHabitsForDate, allHabits]);
-  
+
   // Get daily progress - include allHabits so it recalculates when habits are added/removed
   const progress = useMemo(() => getDailyProgress(selectedDate), [selectedDate, getDailyProgress, logs, allHabits]);
 
@@ -95,7 +121,7 @@ export default function TodayScreen() {
   const isToday = selectedDate === todayString;
   const isFutureDate = selectedDate > todayString;
   const isPastDate = selectedDate < todayString;
-  
+
   // Determine empty state type
   const getEmptyStateType = () => {
     if (habits.length === 0) return 'rest_day';
@@ -118,12 +144,24 @@ export default function TodayScreen() {
         entering={FadeIn.duration(500)}
         style={styles.header}
       >
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>
             {getGreeting()}, {firstName} 👋
           </Text>
           <Text style={styles.date}>{formatDate(selectedDate)}</Text>
         </View>
+
+        {/* Notification Bell */}
+        <Pressable onPress={handleNotifications} style={styles.notificationButton}>
+          <Feather name="bell" size={24} color={colors.text.primary} />
+          {(totalNotificationCount > 0) && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {totalNotificationCount > 9 ? '9+' : totalNotificationCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </Animated.View>
 
       {/* Offline Banner */}
@@ -145,9 +183,9 @@ export default function TodayScreen() {
         {habits.length === 0 ? (
           <EmptyState
             type={
-              isPastDate ? 'no_habits_past' : 
-              isFutureDate ? 'no_habits_future' : 
-              allHabits.length === 0 ? 'no_habits' : 'rest_day'
+              isPastDate ? 'no_habits_past' :
+                isFutureDate ? 'no_habits_future' :
+                  allHabits.length === 0 ? 'no_habits' : 'rest_day'
             }
             onAddHabit={isToday ? handleAddHabit : undefined}
           />
@@ -159,7 +197,7 @@ export default function TodayScreen() {
               total={progress.total}
               percentage={progress.percentage}
             />
-            
+
             {/* Perfect Day Badge */}
             <PerfectDayBadge
               visible={true}
@@ -196,7 +234,7 @@ export default function TodayScreen() {
               <Text style={styles.sectionHeader}>
                 {isToday ? "Today's Habits" : 'Habits'}
               </Text>
-              
+
               {/* Swipe hint for new users - only show for today */}
               {isToday && progress.completed === 0 && (
                 <Animated.View
@@ -279,6 +317,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
+  headerLeft: {
+    flex: 1,
+  },
   greeting: {
     ...textStyles.headlineMedium,
     color: colors.text.primary,
@@ -287,6 +328,34 @@ const styles = StyleSheet.create({
     ...textStyles.bodySmall,
     color: colors.text.secondary,
     marginTop: spacing.xs,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.background.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.accent.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: colors.background.primary,
+  },
+  notificationBadgeText: {
+    fontFamily: fontFamily.bold,
+    fontSize: 10,
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,

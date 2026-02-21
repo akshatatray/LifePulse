@@ -265,12 +265,12 @@ export const useAuthStore = create<AuthState>()(
           return { success: true };
         } catch (error: any) {
           console.error('[Auth] Error sending verification email:', error);
-          
+
           let errorMessage = 'Failed to send verification email.';
           if (error.code === 'auth/too-many-requests') {
             errorMessage = 'Too many requests. Please wait a moment before trying again.';
           }
-          
+
           return { success: false, error: errorMessage };
         }
       },
@@ -287,7 +287,7 @@ export const useAuthStore = create<AuthState>()(
           // Reload user to get latest emailVerified status
           await currentUser.reload();
           const refreshedUser = auth().currentUser;
-          
+
           if (refreshedUser?.emailVerified) {
             console.log('[Auth] Email verified!');
             const user = mapFirebaseUser(refreshedUser);
@@ -297,7 +297,7 @@ export const useAuthStore = create<AuthState>()(
             });
             return true;
           }
-          
+
           set({ isCheckingVerification: false });
           return false;
         } catch (error) {
